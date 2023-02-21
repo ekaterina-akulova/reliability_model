@@ -1,9 +1,11 @@
-from calculations.mtbf_by_temp import get_models, temperature_mtbf, get_indicators, calculate_mean, find_MTBF
+from calculations.mtbf_by_temp import get_models, temperature_mtbf, get_indicators, calculate_mean, find_MTBF, \
+    calculate_mtbf
 from generate_ts.generate import generate_ts
 from generate_ts.init_dataset import get_dataset
 import matplotlib.pyplot as plt
-
+import numpy as np
 from model.train_model import polynomial
+
 
 
 def plot(df):
@@ -16,6 +18,24 @@ def plot(df):
     fig.show()
 
 
+def dd(ts):
+    delta_t = np.diff(ts['temp'])
+    if np.all(delta_t > 0):
+        print('Температура во временном ряде увеличивается')
+    elif np.all(delta_t < 0):
+        print('Температура во временном ряде уменьшается')
+    else:
+        print('Температура во временном ряде изменяется непостоянно')
+
+import math
+
+
+def Bernoulli(p, n, q, pred_q):
+    q = 1 - p
+    m = 1
+    P = (math.factorial(n) / math.factorial(m) * math.factorial(n)) * ((p ** m) * (q ** (n - m)) * pred_q)
+    return P
+
 def main():
     df_orig = get_dataset()
     ts = generate_ts()
@@ -23,13 +43,13 @@ def main():
     mtbf_25, mtbf_40, fr_25, fr_40 = get_indicators(df_orig, models, 0)
     df_temp = temperature_mtbf(5, 45, mtbf_25, mtbf_40)
     # plot(df_temp)
+    df_temp = calculate_mtbf(ts, df_temp)
     # mtbf_ts = calculate_mean(ts, df_temp, 10)
-    MTBF = find_MTBF(26, mtbf_40, mtbf_25)
-    print(MTBF)
-    # print(mtbf_ts)
-    # mtbf_ts['rolling_window'].plot()
-    # mtbf_ts['mean_all'].plot()
-    # polynomial(mtbf_ts, 5)
+
+    # MTBF = find_MTBF(26, mtbf_40, mtbf_25)
+    # print(MTBF)
+
+    # dd(ts)
 
 
 

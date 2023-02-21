@@ -10,6 +10,32 @@ def get_models(df):
     return models
 
 
+def bernoulli(p, n, pred_q, pred_p):
+    m = 1
+    q = (1 - p)
+    P = (math.factorial(n) / (math.factorial(m) * math.factorial(n))) * ((((p * pred_p) ** m)) * ((q * pred_q) ** (n - m)))
+    return P, p, q
+
+
+def calculate_mtbf(ts, df_temp):
+    values = []
+    for index, row in ts.iterrows():
+        mask = (df_temp['temp'] == ts.temp[index])
+        value = df_temp[mask].values
+        # values.append(value[0, 1])
+        i = index + 1
+        if index == 0:
+            ts.loc[index, 'temp_mtbf'] = value[0, 1]
+            ts.loc[index, 'mtbf'] = value[0, 1]
+            pred_p = value[0, 1] ** 1
+            pred_q = (1 - value[0, 1]) ** (i - 1)
+        else:
+            ts.loc[index, 'temp_mtbf'] = value[0, 1]
+            P, pred_p, pred_q = bernoulli(value[0, 1], i, pred_q, pred_p)
+            ts.loc[index, 'mtbf'] = P
+    return ts
+
+
 def find_MTBF(t, MTBF40, MTBF25):
     b = math.log(MTBF40 / MTBF25) / 15
     MTBF = MTBF25 / math.exp(b * 25)
