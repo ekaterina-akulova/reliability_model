@@ -1,6 +1,7 @@
 import datetime
 import pandas as pd
 import random
+import numpy as np
 
 
 def generate_date(start, l, num_min):
@@ -34,5 +35,31 @@ def generate_ts():
     return ts
 
 
+def generate_device_work(df):
+    temperature_range = list(df['temp']) # диапазон температур
+    failure_probability = list(df['afr']) # вероятность отказа
+    temperature_failure_dict = dict(zip(temperature_range, failure_probability))
+    num_simulations = 1000
+    results = [[]]
+    n = 0
+    result = 1
+    temperature = random.choice(temperature_range)  # выбираем случайную температуру
+    failure_prob = temperature_failure_dict[temperature]  # получаем вероятность отказа
+    for i in range(num_simulations):
+        if result != 0:
+            result = np.random.choice([0, 1], p=[failure_prob, 1-failure_prob])
+            results[n].append((temperature, result))
+        else:
+            temperature = random.choice(temperature_range) # выбираем случайную температуру
+            failure_prob = temperature_failure_dict[temperature] # получаем вероятность отказа
+            n += 1
+    return results
 
-
+# def generate_device_work1(df, temp_list): # диапазон температур
+#     failure_probability = list(df['afr'])  # вероятность отказа
+#     temperature_failure_dict = dict(zip(temp_list, failure_probability))
+#     num_simulations = 1000
+#     results = [[]]
+#     n = 0
+#     result = 1
+#     for temp in random.choice(temp_list):

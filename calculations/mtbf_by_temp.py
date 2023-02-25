@@ -1,4 +1,6 @@
-from calculations.reliability_indicators import const_failure_rate, mtbf_minute, failure_rate_minute, calculate_by_temp
+import numpy as np
+from calculations.reliability_indicators import const_failure_rate, mtbf_minute, failure_rate_minute, calculate_by_temp, \
+    probability_without_fail
 import pandas as pd
 import math
 
@@ -10,11 +12,42 @@ def get_models(df):
     return models
 
 
+def bernoulli1(fr, list_pred_q, pred_p):
+    # p_t = p(t)
+    p_t = 1 - probability_without_fail(fr, 1)
+    if (list_pred_q == []):
+        return p_t
+    else:
+        pred_prob_q = math.prod(list_pred_q)
+        return (pred_prob_q * p_t) + pred_p
+
+
 def bernoulli(p, n, pred_q, pred_p):
     m = 1
     q = (1 - p)
-    P = (math.factorial(n) / (math.factorial(m) * math.factorial(n))) * ((((p * pred_p) ** m)) * ((q * pred_q) ** (n - m)))
-    return P, p, q
+    prob_fail = p * pred_p
+    prob_work = q * pred_q
+    # P2 = pred_p * prob_work + p * prob_fail
+    P = n * (prob_fail * prob_work)
+    return prob_work, prob_fail, prob_work
+
+
+def indicator_change(temp1, value1, temp2, value2):
+    # a = value1/temp1
+    # b = temp2/temp1
+    # c = value2/b
+    # r = c ** a
+    res = value2/(temp2/temp1)
+    return res
+
+
+def probability_fail(n, fr, last_prob_fail, last_prob_work):
+    m = 1
+    prob_work = probability_without_fail(fr, 1)
+    prob_work = prob_work * last_prob_work
+    prob_fail = 1 - prob_work
+    # prob_wrk_1 = 1 - prob_fail
+    return prob_work, prob_fail, prob_work
 
 
 def calculate_mtbf(ts, df_temp):
@@ -22,18 +55,32 @@ def calculate_mtbf(ts, df_temp):
     for index, row in ts.iterrows():
         mask = (df_temp['temp'] == ts.temp[index])
         value = df_temp[mask].values
-        # values.append(value[0, 1])
+        list_q = []
+        values.append(value[0])
         i = index + 1
         if index == 0:
-            ts.loc[index, 'temp_mtbf'] = value[0, 1]
-            ts.loc[index, 'mtbf'] = value[0, 1]
-            pred_p = value[0, 1] ** 1
-            pred_q = (1 - value[0, 1]) ** (i - 1)
+            ts.loc[index, 'temp_afr'] = value[0, 2]
+            # ts.loc[index, 'mtbf'] = value[0, 1]
+            pred_p = value[0, 2]
+            pred_q = (1 - pred_p)
+            list_q += [pred_q]
+            pred_prob_work = probability_without_fail(value[0, 2], 1)
+            pred_prob_fail = 1 - pred_prob_work
+            ts.loc[index, 'prob'] = pred_prob_work
+            # ts.loc[index, 'prob_fail'] = pred_prob_fail
         else:
-            ts.loc[index, 'temp_mtbf'] = value[0, 1]
-            P, pred_p, pred_q = bernoulli(value[0, 1], i, pred_q, pred_p)
-            ts.loc[index, 'mtbf'] = P
-    return ts
+            ts.loc[index, 'temp_afr'] = value[0, 2]
+            P = bernoulli1(value[0, 2], list_q, pred_p)
+            q = 1 - value[0, 2]
+            pred_p = value[0, 2]
+            ts.loc[index, 'prob1'] = P
+            list_q += [q]
+            P1, pred_p, pred_q = bernoulli(value[0, 2], i, pred_q, pred_p)
+            ts.loc[index, 'pred_afr'] = indicator_change(values[index - 1][0], values[index - 1][2], values[index][0], values[index][2])
+            P, pred_prob_fail, pred_prob_work = probability_fail(i, value[0, 2], pred_prob_fail, pred_prob_work)
+            ts.loc[index, 'prob'] = P1
+            ts.loc[index, 'prob_work'] = P
+            return ts
 
 
 def find_MTBF(t, MTBF40, MTBF25):
@@ -64,7 +111,7 @@ def get_indicators(df, models, i):
     mtbf_minutes_25 = mtbf_minute(mtbf_25)
     fr_min_40 = failure_rate_minute(failure_rate_40)
     fr_min_25 = failure_rate_minute(failure_rate_25)
-    return mtbf_minutes_25, mtbf_minutes_40, fr_min_25, fr_min_40
+    return mtbf_25, mtbf_40, fr_min_25, fr_min_40
 
 
 def temperature_mtbf(range1, range2, mtbf_25, mtbf_40):
@@ -82,6 +129,7 @@ def temperature_mtbf(range1, range2, mtbf_25, mtbf_40):
             df.loc[index, 'mtbf'] = ((10 - df.temp[index]) * step_2) + mtbf_40
         elif 0 > df.temp[index]:
             df.loc[index, 'mtbf'] = ((10 + abs(df.temp[index])) * step_2) + mtbf_40
+        df.loc[index, 'afr'] = const_failure_rate(df.loc[index, 'mtbf'])
     return df
 
 

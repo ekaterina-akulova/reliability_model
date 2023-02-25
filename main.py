@@ -1,6 +1,6 @@
 from calculations.mtbf_by_temp import get_models, temperature_mtbf, get_indicators, calculate_mean, find_MTBF, \
     calculate_mtbf
-from generate_ts.generate import generate_ts
+from generate_ts.generate import generate_ts, generate_device_work
 from generate_ts.init_dataset import get_dataset
 import matplotlib.pyplot as plt
 import numpy as np
@@ -42,7 +42,9 @@ def main():
     models = get_models(df_orig)
     mtbf_25, mtbf_40, fr_25, fr_40 = get_indicators(df_orig, models, 0)
     df_temp = temperature_mtbf(5, 45, mtbf_25, mtbf_40)
+    device_work = generate_device_work(df_temp)
     # plot(df_temp)
+    # ts['temp'].plot()
     df_temp = calculate_mtbf(ts, df_temp)
     # mtbf_ts = calculate_mean(ts, df_temp, 10)
 

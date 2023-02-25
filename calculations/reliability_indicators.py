@@ -27,7 +27,7 @@ def reliability(fail_rate, time): #надежность при заданной 
 
 
 def probability_without_fail(fail_rate, time):
-    return '{:.0%}'.format(math.exp((-1) * fail_rate * time))
+    return float('{:.10f}'.format(math.exp((-1) * fail_rate * time)))
 
 
 def make_reliability_function(fail_rate): #экспоненциальная функция надежности
