@@ -3,6 +3,7 @@ from calculations.mtbf_by_temp import get_models, temperature_mtbf, get_indicato
 from generate_ts.generate import generate_ts, generate_device_work
 from generate_ts.init_dataset import get_dataset
 import matplotlib.pyplot as plt
+import math
 import numpy as np
 from model.train_model import polynomial
 
@@ -27,14 +28,6 @@ def dd(ts):
     else:
         print('Температура во временном ряде изменяется непостоянно')
 
-import math
-
-
-def Bernoulli(p, n, q, pred_q):
-    q = 1 - p
-    m = 1
-    P = (math.factorial(n) / math.factorial(m) * math.factorial(n)) * ((p ** m) * (q ** (n - m)) * pred_q)
-    return P
 
 def main():
     df_orig = get_dataset()

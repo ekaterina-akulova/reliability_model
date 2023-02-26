@@ -37,7 +37,7 @@ def generate_ts():
 
 def generate_device_work(df):
     temperature_range = list(df['temp']) # диапазон температур
-    failure_probability = list(df['afr']) # вероятность отказа
+    failure_probability = list(df['prob_fail']) # вероятность отказа
     temperature_failure_dict = dict(zip(temperature_range, failure_probability))
     num_simulations = 1000
     results = [[]]
